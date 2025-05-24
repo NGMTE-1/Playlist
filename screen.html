@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CBOW Sync</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .button {
+      background: linear-gradient(to right, #00facc, #007bff);
+      border: none;
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <h1>CBOW Sync</h1>
+
+  <div id="role-select">
+    <button class="button" onclick="startAs('screen')">Start as Screen</button>
+    <button class="button" onclick="startAs('remote')">Start as Remote</button>
+  </div>
+
+  <div id="remote-controls" style="display:none;">
+    <h2>Remote Mode</h2>
+    <input id="codeInput" placeholder="Enter 4-digit code" maxlength="4" class="button" style="width: 120px;"/>
+    <button class="button" onclick="connectRemote()">Connect</button>
+    <div id="remote-buttons" style="margin-top: 20px; display:none;">
+      <button class="button" onclick="sendPlaylist()">▶ Play Night Playlist</button>
+    </div>
+  </div>
+
+  <div id="screen-view" style="display:none;">
+    <h2>Screen Mode</h2>
+    <div id="status">Waiting for playlist from remote...</div>
+  </div>
+
+  <script>
+    const playlistURL = "https://www.youtube.com/watch?v=uu7j_xljCRY&list=PLtbHZoqAgzuv_ob0fBF1pNz51GOcEaZHg";
+    let sessionCode = "";
+
+    function startAs(role) {
+      document.getElementById('role-select').style.display = "none";
+      if (role === 'screen') {
+        sessionCode = prompt("Enter a 4-digit session code:");
+        if (!/^[0-9]{4}$/.test(sessionCode)) return alert("Invalid code.");
+        document.getElementById("screen-view").style.display = "block";
+        pollForPlaylist();
+      } else {
+        document.getElementById("remote-controls").style.display = "block";
+      }
+    }
+
+    function connectRemote() {
+      const input = document.getElementById("codeInput").value.trim();
+      if (!/^[0-9]{4}$/.test(input)) return alert("Please enter a valid 4-digit code.");
+      sessionCode = input;
+      document.getElementById("remote-buttons").style.display = "block";
+    }
+
+    function sendPlaylist() {
+      localStorage.setItem(`cbow-${sessionCode}`, JSON.stringify({ url: playlistURL }));
+    }
+
+    function pollForPlaylist() {
+      let lastUrl = "";
+      setInterval(() => {
+        const data = localStorage.getItem(`cbow-${sessionCode}`);
+        if (!data) return;
+        const { url } = JSON.parse(data);
+        if (url && url !== lastUrl) {
+          lastUrl = url;
+          document.getElementById("status").innerText = "Redirecting to playlist...";
+          window.location.href = url; // ✅ Replaces the current page with YouTube
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
